@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111827" />
+  <title>Nova Calculator</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(20, 27, 48, 0.92);
+      --key: #202943;
+      --key-hover: #2d3958;
+      --text: #f5f7ff;
+      --muted: #9aa6c3;
+      --accent: #8b7cff;
+      --accent-2: #58dfc1;
+      --danger: #ff7893;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 15% 15%, rgba(139,124,255,.22), transparent 32%),
+        radial-gradient(circle at 85% 85%, rgba(88,223,193,.12), transparent 30%),
+        var(--bg);
+    }
+    .app { width: min(100%, 390px); }
+    .brand {
+      display: flex; align-items: center; justify-content: space-between;
+      margin: 0 4px 14px;
+    }
+    .brand-name { font-size: 13px; letter-spacing: .22em; font-weight: 800; color: #d9ddff; }
+    .status { font-size: 11px; color: var(--accent-2); letter-spacing: .08em; }
+    .calculator {
+      padding: 22px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 28px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px rgba(0,0,0,.42);
+      backdrop-filter: blur(16px);
+    }
+    .display {
+      min-height: 142px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 14px 4px 22px;
+      overflow: hidden;
+    }
+    .previous {
+      min-height: 25px;
+      color: var(--muted);
+      font-size: 15px;
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+    .current {
+      width: 100%;
+      margin-top: 8px;
+      color: var(--text);
+      font-size: clamp(32px, 10vw, 48px);
+      line-height: 1.12;
+      font-weight: 650;
+      text-align: right;
+      overflow-wrap: anywhere;
+      letter-spacing: -.04em;
+    }
+    .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    button {
+      min-height: 62px;
+      border: 1px solid rgba(255,255,255,.045);
+      border-radius: 18px;
+      background: var(--key);
+      color: var(--text);
+      font: inherit;
+      font-size: 19px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:hover { background: var(--key-hover); border-color: rgba(255,255,255,.12); }
+    button:active { transform: scale(.96); }
+    button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; }
+    .utility { color: #c7cde0; background: #29324b; }
+    .operator { color: #c5bdff; background: #302c57; }
+    .operator.selected { background: var(--accent); color: white; }
+    .clear { color: var(--danger); }
+    .equals {
+      color: #071a19;
+      background: linear-gradient(135deg, var(--accent-2), #9bf2d9);
+      border: 0;
+      font-size: 25px;
+    }
+    .equals:hover { background: #7debd0; }
+    .zero { grid-column: span 2; }
+    .hint { margin: 15px 4px 0; text-align: center; color: var(--muted); font-size: 11px; line-height: 1.6; }
+    .hint kbd {
+      padding: 2px 5px; border: 1px solid #39435e; border-radius: 5px;
+      color: #dce2f7; font: inherit;
+    }
+    @media (max-width: 360px) {
+      .calculator { padding: 15px; }
+      .keys { gap: 7px; }
+      button { min-height: 56px; border-radius: 15px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="brand">
+      <div class="brand-name">NOVA / CALC</div>
+      <div class="status">● READY</div>
+    </header>
+
+    <section class="calculator" aria-label="Calculator">
+      <div class="display" aria-live="polite" aria-atomic="true">
+        <div class="previous" id="previous"></div>
+        <div class="current" id="current">0</div>
+      </div>
+
+      <div class="keys" id="keys">
+        <button class="utility clear" data-action="clear" aria-label="Clear all">AC</button>
+        <button class="utility" data-action="delete" aria-label="Delete last digit">DEL</button>
+        <button class="utility" data-action="sign" aria-label="Change sign">+/−</button>
+        <button class="operator" data-operator="/" aria-label="Divide">÷</button>
+
+        <button data-number="7">7</button>
+        <button data-number="8">8</button>
+        <button data-number="9">9</button>
+        <button class="operator" data-operator="*" aria-label="Multiply">×</button>
+
+        <button data-number="4">4</button>
+        <button data-number="5">5</button>
+        <button data-number="6">6</button>
+        <button class="operator" data-operator="-" aria-label="Subtract">−</button>
+
+        <button data-number="1">1</button>
+        <button data-number="2">2</button>
+        <button data-number="3">3</button>
+        <button class="operator" data-operator="+" aria-label="Add">+</button>
+
+        <button class="zero" data-number="0">0</button>
+        <button data-action="decimal" aria-label="Decimal point">.</button>
+        <button class="equals" data-action="equals" aria-label="Calculate result">=</button>
+      </div>
+    </section>
+
+    <p class="hint">Keyboard ready: <kbd>0–9</kbd> numbers · <kbd>+ − * /</kbd> operations · <kbd>Enter</kbd> result · <kbd>Esc</kbd> clear</p>
+  </main>
+
+  <script>
+    const currentDisplay = document.getElementById("current");
+    const previousDisplay = document.getElementById("previous");
+    const keys = document.getElementById("keys");
+
+    let currentValue = "0";
+    let previousValue = null;
+    let operator = null;
+    let shouldResetDisplay = false;
+
+    function updateDisplay() {
+      currentDisplay.textContent = currentValue;
+      if (previousValue !== null && operator) {
+        const symbol = { "/": "÷", "*": "×", "-": "−", "+": "+" }[operator];
+        previousDisplay.textContent = `${previousValue} ${symbol}`;
+      } else {
+        previousDisplay.textContent = "";
+      }
+      document.querySelectorAll(".operator").forEach(button => {
+        button.classList.toggle("selected", button.dataset.operator === operator);
+      });
+    }
+
+    function enterNumber(number) {
+      if (currentValue === "Error" || shouldResetDisplay) {
+        currentValue = number;
+        shouldResetDisplay = false;
+      } else if (currentValue === "0") {
+        currentValue = number;
+      } else if (currentValue.replace("-", "").replace(".", "").length < 14) {
+        currentValue += number;
+      }
+      updateDisplay();
+    }
+
+    function enterDecimal() {
+      if (currentValue === "Error" || shouldResetDisplay) {
+        currentValue = "0.";
+        shouldResetDisplay = false;
+      } else if (!currentValue.includes(".")) {
+        currentValue += ".";
+      }
+      updateDisplay();
+    }
+
+    function calculate(a, op, b) {
+      const first = Number(a);
+      const second = Number(b);
+      let result;
+
+      if (op === "+") result = first + second;
+      else if (op === "-") result = first - second;
+      else if (op === "*") result = first * second;
+      else if (op === "/") {
+        if (second === 0) return "Error";
+        result = first / second;
+      }
+
+      if (!Number.isFinite(result)) return "Error";
+      return String(Number(result.toPrecision(10)));
+    }
+
+    function chooseOperator(nextOperator) {
+      if (currentValue === "Error") return;
+      if (operator && !shouldResetDisplay) {
+        const result = calculate(previousValue, operator, currentValue);
+        currentValue = result;
+        previousValue = result === "Error" ? null : result;
+      } else {
+        previousValue = currentValue;
+      }
+      operator = currentValue === "Error" ? null : nextOperator;
+      shouldResetDisplay = true;
+      updateDisplay();
+    }
+
+    function showResult() {
+      if (operator === null || previousValue === null || currentValue === "Error") return;
+      const left = previousValue;
+      const right = currentValue;
+      const symbol = { "/": "÷", "*": "×", "-": "−", "+": "+" }[operator];
+      const result = calculate(left, operator, right);
+      previousDisplay.textContent = `${left} ${symbol} ${right} =`;
+      currentValue = result;
+      previousValue = null;
+      operator = null;
+      shouldResetDisplay = true;
+      updateDisplay();
+      previousDisplay.textContent = `${left} ${symbol} ${right} =`;
+    }
+
+    function clearAll() {
+      currentValue = "0";
+      previousValue = null;
+      operator = null;
+      shouldResetDisplay = false;
+      updateDisplay();
+    }
+
+    function deleteLast() {
+      if (currentValue === "Error" || shouldResetDisplay) {
+        currentValue = "0";
+        shouldResetDisplay = false;
+      } else if (currentValue.length > 1) {
+        currentValue = currentValue.slice(0, -1);
+        if (currentValue === "-") currentValue = "0";
+      } else {
+        currentValue = "0";
+      }
+      updateDisplay();
+    }
+
+    function toggleSign() {
+      if (currentValue === "Error" || currentValue === "0") return;
+      currentValue = currentValue.startsWith("-") ? currentValue.slice(1) : "-" + currentValue;
+      updateDisplay();
+    }
+
+    keys.addEventListener("click", event => {
+      const button = event.target.closest("button");
+      if (!button) return;
+      if (button.dataset.number !== undefined) enterNumber(button.dataset.number);
+      else if (button.dataset.operator) chooseOperator(button.dataset.operator);
+      else if (button.dataset.action === "decimal") enterDecimal();
+      else if (button.dataset.action === "equals") showResult();
+      else if (button.dataset.action === "clear") clearAll();
+      else if (button.dataset.action === "delete") deleteLast();
+      else if (button.dataset.action === "sign") toggleSign();
+    });
+
+    document.addEventListener("keydown", event => {
+      if (/^[0-9]$/.test(event.key)) enterNumber(event.key);
+      else if (event.key === ".") enterDecimal();
+      else if (["+", "-", "*", "/"].includes(event.key)) chooseOperator(event.key);
+      else if (event.key === "Enter" || event.key === "=") {
+        event.preventDefault();
+        showResult();
+      } else if (event.key === "Escape") clearAll();
+      else if (event.key === "Backspace") deleteLast();
+    });
+
+    updateDisplay();
+  </script>
+</body>
+</html>
